@@ -10,34 +10,69 @@ Options:
   --size=<size>  The minimum size of the cave in bytes [default: 256]
 """
 from docopt import docopt
+from struct import *
 from lib import *
+from kaitaistruct import *
 
-def search_cave(section, cave_size):
+def search_cave(name, body, cave_size, file_offset):
   null_count = 0
 
-  for offset in xrange(len(section.body)):
-    byte = section.body[offset]
+  for offset in xrange(len(body)):
+    byte = body[offset]
 
     if byte == "\x00":
       null_count += 1
     else:
       if null_count >= int(cave_size):
         print "{}[*]{} New cave detected !{}".format(Bcolors.YELLOW, Bcolors.BOLD, Bcolors.ENDC)
-        print "  section_name: {}".format(section.name)
-        print "  cave_begin:   0x{:08x}".format(section.pointer_to_raw_data + offset)
-        print "  cave_end:     0x{:08x}".format(section.pointer_to_raw_data + offset + null_count)
+        print "  section_name: {}".format(name)
+        print "  cave_begin:   0x{:08x}".format(file_offset + offset - null_count)
+        print "  cave_end:     0x{:08x}".format(file_offset + offset)
         print
 
       null_count = 0
+
+def search_pe(filename, cavesize):
+  g = MicrosoftPe.from_file(filename)
+
+  mz_size = 0x3F
+  mz2_size = g.mz1.header_size - 0x40
+  pe_sig_size = 0x4
+  coff_size = 0x13
+  opt_size = g.coff_hdr.size_of_optional_header
+
+  offset = mz_size + mz2_size + pe_sig_size + coff_size + opt_size
+
+  section_size = 0x27
+
+  idx = 0
+  for section in g.sections:
+    section_offset = offset + (idx * section_size)
+    search_cave(section.name, section.body, cavesize, section_offset)
+    idx += 1
+
+def search_macho(filename, cavesize):
+  g = MachO.from_file(filename)
+
+  for command in g.load_commands:
+    search_cave(str(command.type), command.body, cavesize, 0)
+
+def detect_type(filename, cavesize):
+  data = open(filename, "rb").read()
+
+  mz    = "MZ"
+  elf   = "\x7FELF"
+  macho = pack("I", 0xfeedfacf)
+
+  if   data[0x0:0x2] == mz:    search_pe(filename, cavesize)
+  elif data[0x0:0x4] == elf:   print "elf"
+  elif data[0x0:0x4] == macho: search_macho(filename, cavesize)
 
 def search(filename, cavesize):
   print "{}[*]{} Starting cave mining process...{}".format(Bcolors.YELLOW, Bcolors.BOLD, Bcolors.ENDC)
   print
 
-  g = MicrosoftPe.from_file(filename)
-
-  for section in g.sections:
-    search_cave(section, cavesize)
+  detect_type(filename, cavesize)
 
   print "{}[*]{} Mining finished.{}".format(Bcolors.YELLOW, Bcolors.BOLD, Bcolors.ENDC)
 
