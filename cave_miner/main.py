@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Search for code cave in all binaries
 Usage:
@@ -83,7 +82,7 @@ def print_banner():
    ℂᎪᏙᎬ {gn}||{e} ᎷⅠℕᎬᎡ
   """.format(gy=Bcolors.GREY, gn=Bcolors.GREEN, e=Bcolors.ENDC)
 
-if __name__ == '__main__':
+def main():
   print_banner()
   args = docopt(__doc__, version='0.1')
 

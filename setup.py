@@ -1,8 +1,12 @@
 from setuptools import setup
 setup(
   name = 'cave_miner',
-  packages = ['cave_miner==0.3'], # this must be the same as the name above
-  scripts = ['bin/cave_miner'],
+  packages = ['cave_miner'], # this must be the same as the name above
+  entry_points={
+    'console_scripts': [
+      'cave_miner=cave_miner.main:main',
+    ],
+  },
   install_requires = ['docopt==0.6.2', 'kaitaistruct==0.7'],
   version = '0.3',
   description = 'Search for code cave in all binaries',
