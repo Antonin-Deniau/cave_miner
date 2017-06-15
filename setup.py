@@ -1,7 +1,7 @@
 from setuptools import setup
 setup(
   name = 'cave_miner',
-  packages = ['cave_miner'], # this must be the same as the name above
+  packages = ['cave_miner'],
   entry_points={
     'console_scripts': [
       'cave_miner=cave_miner.main:main',
@@ -12,9 +12,8 @@ setup(
   description = 'Search for code cave in all binaries',
   author = 'DENIAU Antonin',
   author_email = 'antonin.deniau@protonmail.com',
-  url = 'https://github.com/Antonin-Deniau/cave_miner', # use the URL to the github repo
-  download_url = 'https://github.com/Antonin-Deniau/cave_miner/archive/0.3.tar.gz', # I'll explain this in a second
-  keywords = ['code', 'cave', 'codecave', 'macho', 'mach-o', 'elf', 'pe'], # arbitrary keywords
+  url = 'https://github.com/Antonin-Deniau/cave_miner',
+  keywords = ['code', 'cave', 'codecave', 'macho', 'mach-o', 'elf', 'pe'],
   classifiers = [],
 )
 
