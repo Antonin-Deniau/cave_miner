@@ -48,6 +48,12 @@ def search_macho(filename, cavesize):
         if isinstance(section.data, str):
           search_cave("{}.{}".format(section.seg_name, section.sect_name), section.data, cavesize, section.offset)
 
+def search_elf(filename, cavesize):
+  g = Elf.from_file(filename)
+
+  for section in g.header.section_headers:
+    search_cave(section.name, section.body, cavesize, section.offset)
+
 def detect_type(filename, cavesize):
   data = open(filename, "rb").read()
 
@@ -56,7 +62,7 @@ def detect_type(filename, cavesize):
   macho = pack("I", 0xfeedfacf)
 
   if   data[0x0:0x2] == mz:    search_pe(filename, cavesize)
-  elif data[0x0:0x4] == elf:   print "elf"
+  elif data[0x0:0x4] == elf:   search_elf(filename, cavesize)
   elif data[0x0:0x4] == macho: search_macho(filename, cavesize)
 
 def search(filename, cavesize):
