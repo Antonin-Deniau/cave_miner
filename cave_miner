@@ -12,7 +12,6 @@ Options:
 from docopt import docopt
 from struct import *
 from lib import *
-from kaitaistruct import *
 
 def search_cave(name, body, cave_size, file_offset):
   null_count = 0
@@ -28,6 +27,7 @@ def search_cave(name, body, cave_size, file_offset):
         print "  section_name: {}".format(name)
         print "  cave_begin:   0x{:08x}".format(file_offset + offset - null_count)
         print "  cave_end:     0x{:08x}".format(file_offset + offset)
+        print "  cave_size:    0x{:08x}".format(null_count)
         print
 
       null_count = 0
@@ -35,27 +35,18 @@ def search_cave(name, body, cave_size, file_offset):
 def search_pe(filename, cavesize):
   g = MicrosoftPe.from_file(filename)
 
-  mz_size = 0x3F
-  mz2_size = g.mz1.header_size - 0x40
-  pe_sig_size = 0x4
-  coff_size = 0x13
-  opt_size = g.coff_hdr.size_of_optional_header
-
-  offset = mz_size + mz2_size + pe_sig_size + coff_size + opt_size
-
-  section_size = 0x27
-
-  idx = 0
   for section in g.sections:
-    section_offset = offset + (idx * section_size)
+    section_offset = section.pointer_to_raw_data
     search_cave(section.name, section.body, cavesize, section_offset)
-    idx += 1
 
 def search_macho(filename, cavesize):
   g = MachO.from_file(filename)
 
   for command in g.load_commands:
-    search_cave(str(command.type), command.body, cavesize, 0)
+    if command.type == MachO.LoadCommandType.segment_64:
+      for section in command.body.sections:
+        if isinstance(section.data, str):
+          search_cave("{}.{}".format(section.seg_name, section.sect_name), section.data, cavesize, section.offset)
 
 def detect_type(filename, cavesize):
   data = open(filename, "rb").read()
