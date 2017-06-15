@@ -1,5 +1,5 @@
 *.swp
 dist/
 build/
-cave_miner.egg-info/
+*.egg-info/
 *.pyc
