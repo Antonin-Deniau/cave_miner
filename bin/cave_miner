@@ -11,7 +11,7 @@ Options:
 """
 from docopt import docopt
 from struct import *
-from lib import *
+from code_cave import *
 
 def search_cave(name, body, cave_size, file_offset):
   null_count = 0
