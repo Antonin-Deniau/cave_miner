@@ -14,8 +14,6 @@ import os.path
 from cave_miner import *
 import re
 
-CONTINUE = True
-
 def print_banner():
   print """
     {gy}/========\{e}
@@ -27,33 +25,32 @@ def print_banner():
   """.format(gy=Bcolors.GREY, gn=Bcolors.GREEN, e=Bcolors.ENDC)
 
 def test_file(filename):
-  global CONTINUE
+  res = os.path.isfile(filename)
 
-  if not os.path.isfile(filename):
-    print "{r}*** File {filename} doesnt exist ***{e}".format(filename=filename, r=Bcolors.RED, e=Bcolors.ENDC)
-    CONTINUE = False
+  if not res: print "{r}*** File {filename} doesnt exist ***{e}".format(filename=filename, r=Bcolors.RED, e=Bcolors.ENDC)
+  return res
 
 def test_number(number):
-  global CONTINUE
-
   pattern = re.compile("0[xX][0-9a-fA-F]+|\d+")
-  if not pattern.match(number):
-    print "{r}*** Number {number} not valid ***{e}".format(number=number, r=Bcolors.RED, e=Bcolors.ENDC)
-    CONTINUE = False
+  res = pattern.match(number):
+
+  if not res: print "{r}*** Number {number} not valid ***{e}".format(number=number, r=Bcolors.RED, e=Bcolors.ENDC)
+  return res
 
 def main():
   print_banner()
   args = docopt(__doc__, version='0.1')
+  CONTINUE = True
 
   if args["search"] == True:
-    test_file(args["<file_name>"])
-    test_number(args["--size"])
+    CONTINUE &= test_file(args["<file_name>"])
+    CONTINUE &= test_number(args["--size"])
 
     if CONTINUE: search(args["<file_name>"], args["--size"])
 
   elif args["inject"] == True:
-    test_file(args["<payload>"])
-    test_file(args["<file_name>"])
-    test_number(args["<address>"])
+    CONTINUE &= test_file(args["<payload>"])
+    CONTINUE &= test_file(args["<file_name>"])
+    CONTINUE &= test_number(args["<address>"])
 
     if CONTINUE: inject(args["<payload>"], args["<file_name>"], args["<address>"])

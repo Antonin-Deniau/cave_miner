@@ -52,19 +52,19 @@ def parse_sh_flags(byte):
 def parse_pe_flags(byte):
   ret = []
 
-  if 0x00000008 & byte == 0x00000008: ret.append("IMAGE_SCN_TYPE_NO_PAD")
-  if 0x00000020 & byte == 0x00000020: ret.append("IMAGE_SCN_CNT_CODE")
-  if 0x00000040 & byte == 0x00000040: ret.append("IMAGE_SCN_CNT_INITIALIZED_DATA")
-  if 0x00000080 & byte == 0x00000080: ret.append("IMAGE_SCN_CNT_UNINITIALIZED_DATA")
-  if 0x00000100 & byte == 0x00000100: ret.append("IMAGE_SCN_LNK_OTHER")
-  if 0x00000200 & byte == 0x00000200: ret.append("IMAGE_SCN_LNK_INFO")
-  if 0x00000800 & byte == 0x00000800: ret.append("IMAGE_SCN_LNK_REMOVE")
-  if 0x00001000 & byte == 0x00001000: ret.append("IMAGE_SCN_LNK_COMDAT")
-  if 0x00004000 & byte == 0x00004000: ret.append("IMAGE_SCN_NO_DEFER_SPEC_EXC")
-  if 0x00008000 & byte == 0x00008000: ret.append("IMAGE_SCN_GPREL")
-  if 0x00020000 & byte == 0x00020000: ret.append("IMAGE_SCN_MEM_PURGEABLE")
-  if 0x00040000 & byte == 0x00040000: ret.append("IMAGE_SCN_MEM_LOCKED")
-  if 0x00080000 & byte == 0x00080000: ret.append("IMAGE_SCN_MEM_PRELOAD")
+  if 0x00008 & byte == 0x00008: ret.append("IMAGE_SCN_TYPE_NO_PAD")
+  if 0x00020 & byte == 0x00020: ret.append("IMAGE_SCN_CNT_CODE")
+  if 0x00040 & byte == 0x00040: ret.append("IMAGE_SCN_CNT_INITIALIZED_DATA")
+  if 0x00080 & byte == 0x00080: ret.append("IMAGE_SCN_CNT_UNINITIALIZED_DATA")
+  if 0x00100 & byte == 0x00100: ret.append("IMAGE_SCN_LNK_OTHER")
+  if 0x00200 & byte == 0x00200: ret.append("IMAGE_SCN_LNK_INFO")
+  if 0x00800 & byte == 0x00800: ret.append("IMAGE_SCN_LNK_REMOVE")
+  if 0x01000 & byte == 0x01000: ret.append("IMAGE_SCN_LNK_COMDAT")
+  if 0x04000 & byte == 0x04000: ret.append("IMAGE_SCN_NO_DEFER_SPEC_EXC")
+  if 0x08000 & byte == 0x08000: ret.append("IMAGE_SCN_GPREL")
+  if 0x20000 & byte == 0x20000: ret.append("IMAGE_SCN_MEM_PURGEABLE")
+  if 0x40000 & byte == 0x40000: ret.append("IMAGE_SCN_MEM_LOCKED")
+  if 0x80000 & byte == 0x80000: ret.append("IMAGE_SCN_MEM_PRELOAD")
 
   return ", ".join(ret)
 
