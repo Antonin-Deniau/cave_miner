@@ -32,7 +32,7 @@ def test_file(filename):
 
 def test_number(number):
   pattern = re.compile("0[xX][0-9a-fA-F]+|\d+")
-  res = pattern.match(number):
+  res = pattern.match(number)
 
   if not res: print "{r}*** Number {number} not valid ***{e}".format(number=number, r=Bcolors.RED, e=Bcolors.ENDC)
   return res
@@ -43,14 +43,14 @@ def main():
   CONTINUE = True
 
   if args["search"] == True:
-    CONTINUE &= test_file(args["<file_name>"])
-    CONTINUE &= test_number(args["--size"])
+    CONTINUE = CONTINUE and test_file(args["<file_name>"])
+    CONTINUE = CONTINUE and test_number(args["--size"])
 
     if CONTINUE: search(args["<file_name>"], args["--size"])
 
   elif args["inject"] == True:
-    CONTINUE &= test_file(args["<payload>"])
-    CONTINUE &= test_file(args["<file_name>"])
-    CONTINUE &= test_number(args["<address>"])
+    CONTINUE = CONTINUE and test_file(args["<payload>"])
+    CONTINUE = CONTINUE and test_file(args["<file_name>"])
+    CONTINUE = CONTINUE and test_number(args["<address>"])
 
     if CONTINUE: inject(args["<payload>"], args["<file_name>"], args["<address>"])
