@@ -1,5 +1,5 @@
-from bcolors import Bcolors
+from utils import *
+from formats import * 
 
-from elf import Elf
-from microsoft_pe import MicrosoftPe
-from mach_o import MachO
+from search import *
+from inject import *
