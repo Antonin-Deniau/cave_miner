@@ -21,6 +21,7 @@ pip install cave-miner
 Search for code cave in all binaries
 Usage:
   cave_miner search [--size=<size>] <file_name>
+  cave_miner inject <payload> <file_name> <address>
 
 Options:
   -h --help      Show this help
