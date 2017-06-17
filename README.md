@@ -1,4 +1,4 @@
-# ℂᎪᏙᎬ || ᎷⅠℕᎬᎡ
+# CAVE MINER
 This tools search for code cave in binaries (Elf, Mach-o, Pe), and inject code in them.
 
 ### Installation
@@ -11,13 +11,13 @@ pip install cave-miner
 ### Usage
 
 ```
-❯ cave_miner --help
+> cave_miner --help
     /========\
    /    ||    \
         ||
         ||
         ||
-   ℂᎪᏙᎬ || ᎷⅠℕᎬᎡ
+   CAVE || MINER
 
 Search for code cave in all binaries
 Usage:
@@ -33,14 +33,14 @@ Options:
 ### Exemple
 
 ```
-❯ cave_miner search ~/Downloads/putty.exe                                                                      cave_miner/git/master
+> cave_miner search ~/Downloads/putty.exe
 
     /========\
    /    ||    \
         ||
         ||
         ||
-   ℂᎪᏙᎬ || ᎷⅠℕᎬᎡ
+   CAVE || MINER
 
 [*] Starting cave mining process...
 

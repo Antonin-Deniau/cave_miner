@@ -21,7 +21,7 @@ def print_banner():
         {gn}||{e}
         {gn}||{e}
         {gn}||{e}
-   ℂᎪᏙᎬ {gn}||{e} ᎷⅠℕᎬᎡ
+   CAVE {gn}||{e} MINER
   """.format(gy=Bcolors.GREY, gn=Bcolors.GREEN, e=Bcolors.ENDC)
 
 def test_file(filename):
