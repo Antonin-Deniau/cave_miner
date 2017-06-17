@@ -1,5 +1,5 @@
 # ℂᎪᏙᎬ || ᎷⅠℕᎬᎡ
-This tools search for code cave in binaries (Elf, Mach-o, Pe)
+This tools search for code cave in binaries (Elf, Mach-o, Pe), and inject code in them.
 
 ### Installation
 
