@@ -2,6 +2,7 @@
 This tools search for code cave in binaries (Elf, Mach-o, Pe), and inject code in them.
 
 ### Installation
+/!\ Only work in python2.x /!\
 
 ```bash
 pip install cave-miner
@@ -49,7 +50,7 @@ Options:
   cave_end:     0x0009a418
   cave_size:    0x00000104
   vaddress:     0x0009b514
-  infos:        IMAGE_SCN_CNT_INITIALIZED_DATA
+  infos:        Readable, Contain initialized data
 
 [*] New cave detected !
   section_name: .rdata
@@ -57,7 +58,7 @@ Options:
   cave_end:     0x0009a618
   cave_size:    0x00000101
   vaddress:     0x0009b717
-  infos:        IMAGE_SCN_CNT_INITIALIZED_DATA
+  infos:        Readable, Contain initialized data
 
 [*] New cave detected !
   section_name: .data
@@ -65,7 +66,7 @@ Options:
   cave_end:     0x000a0c3c
   cave_size:    0x00000157
   vaddress:     0x000a20e5
-  infos:        IMAGE_SCN_CNT_INITIALIZED_DATA
+  infos:        Readable, Writeable, Contain initialized data
 
 [*] Mining finished.
 ```

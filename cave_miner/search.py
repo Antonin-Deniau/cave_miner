@@ -52,19 +52,20 @@ def parse_sh_flags(byte):
 def parse_pe_flags(byte):
   ret = []
 
-  if 0x00008 & byte == 0x00008: ret.append("IMAGE_SCN_TYPE_NO_PAD")
-  if 0x00020 & byte == 0x00020: ret.append("IMAGE_SCN_CNT_CODE")
-  if 0x00040 & byte == 0x00040: ret.append("IMAGE_SCN_CNT_INITIALIZED_DATA")
-  if 0x00080 & byte == 0x00080: ret.append("IMAGE_SCN_CNT_UNINITIALIZED_DATA")
-  if 0x00100 & byte == 0x00100: ret.append("IMAGE_SCN_LNK_OTHER")
-  if 0x00200 & byte == 0x00200: ret.append("IMAGE_SCN_LNK_INFO")
-  if 0x00800 & byte == 0x00800: ret.append("IMAGE_SCN_LNK_REMOVE")
-  if 0x01000 & byte == 0x01000: ret.append("IMAGE_SCN_LNK_COMDAT")
-  if 0x04000 & byte == 0x04000: ret.append("IMAGE_SCN_NO_DEFER_SPEC_EXC")
-  if 0x08000 & byte == 0x08000: ret.append("IMAGE_SCN_GPREL")
-  if 0x20000 & byte == 0x20000: ret.append("IMAGE_SCN_MEM_PURGEABLE")
-  if 0x40000 & byte == 0x40000: ret.append("IMAGE_SCN_MEM_LOCKED")
-  if 0x80000 & byte == 0x80000: ret.append("IMAGE_SCN_MEM_PRELOAD")
+  if 0x10000000 & byte == 0x10000000: ret.append("Shareable")
+  if 0x20000000 & byte == 0x20000000: ret.append("Executable")
+  if 0x40000000 & byte == 0x40000000: ret.append("Readable")
+  if 0x80000000 & byte == 0x80000000: ret.append("Writeable")
+  if 0x01000000 & byte == 0x01000000: ret.append("Contain extended relocation")
+  if 0x02000000 & byte == 0x02000000: ret.append("Discardable as needed")
+  if 0x04000000 & byte == 0x04000000: ret.append("Cant be cached")
+  if 0x00001000 & byte == 0x00001000: ret.append("Contain COMDAT data")
+  if 0x00000200 & byte == 0x00000200: ret.append("Contais comments or other infos")
+  if 0x00000800 & byte == 0x00000800: ret.append("Wont become part of the image")
+  if 0x00000020 & byte == 0x00000020: ret.append("Contain executable code")
+  if 0x00000040 & byte == 0x00000040: ret.append("Contain initialized data")
+  if 0x00000080 & byte == 0x00000080: ret.append("Contain uninitialized data")
+  if 0x00000008 & byte == 0x00000008: ret.append("Shouldnt be padded to next boundary")
 
   return ", ".join(ret)
 

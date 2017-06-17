@@ -8,7 +8,7 @@ setup(
     ],
   },
   install_requires = ['docopt==0.6.2', 'kaitaistruct==0.7'],
-  version = '1.3',
+  version = '1.4',
   description = 'Search for code cave in all binaries',
   author = 'DENIAU Antonin',
   author_email = 'antonin.deniau@protonmail.com',
