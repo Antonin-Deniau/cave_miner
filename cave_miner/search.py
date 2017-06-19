@@ -72,10 +72,16 @@ def parse_pe_flags(byte):
 def search_pe(filename, cavesize):
   g = MicrosoftPe.from_file(filename)
 
+  if g.optional_hdr.std.format == MicrosoftPe.PeFormat.pe32:
+    base_addr = g.optional_hdr.windows.image_base_32
+  else:
+    base_addr = g.optional_hdr.windows.image_base_64
+
   for section in g.sections:
     section_offset = section.pointer_to_raw_data
     infos = parse_pe_flags(section.characteristics)
-    search_cave(section.name, section.body, cavesize, section_offset, section.virtual_address, infos)
+    vaddr = section.virtual_address + base_addr
+    search_cave(section.name, section.body, cavesize, section_offset, vaddr, infos)
 
 def search_macho(filename, cavesize):
   g = MachO.from_file(filename)
