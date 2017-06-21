@@ -21,13 +21,15 @@ pip install cave-miner
 
 Search for code cave in all binaries
 Usage:
-  cave_miner search [--size=<size>] <file_name>
+  cave_miner search [--size=<size>]
+                  [--bytes=<bytes>]... <file_name>
   cave_miner inject <payload> <file_name> <address>
 
 Options:
-  -h --help      Show this help
-  --version      Show the program version
-  --size=<size>  The minimum size of the cave in bytes [default: 256]
+  -h --help        Show this help
+  --version        Show the program version
+  --size=<size>    The minimum size of the cave in bytes [default: 256]
+  --bytes=<bytes>  The bytes used in the code cave [default: 0x00]
 ```
 
 ### Exemple
@@ -43,6 +45,7 @@ Options:
    CAVE || MINER
 
 [*] Starting cave mining process...
+    Searching for bytes: 0x00...
 
 [*] New cave detected !
   section_name: .rdata
