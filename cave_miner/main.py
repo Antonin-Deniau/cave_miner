@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 """Search for code cave in all binaries
 Usage:
-  cave_miner search [--size=<size>] <file_name>
+  cave_miner search [--size=<size>]
+                    [--bytes=<bytes>]... <file_name>
   cave_miner inject <payload> <file_name> <address>
 
 Options:
-  -h --help      Show this help
-  --version      Show the program version
-  --size=<size>  The minimum size of the cave in bytes [default: 256]
+  -h --help        Show this help
+  --version        Show the program version
+  --size=<size>    The minimum size of the cave in bytes [default: 256]
+  --bytes=<bytes>  The bytes used in the code cave [default: 0x00]
 """
 from docopt import docopt
-import os.path
 from cave_miner import *
-import re
 
 def print_banner():
   print """
@@ -24,19 +24,6 @@ def print_banner():
    CAVE {gn}||{e} MINER
   """.format(gy=Bcolors.GREY, gn=Bcolors.GREEN, e=Bcolors.ENDC)
 
-def test_file(filename):
-  res = os.path.isfile(filename)
-
-  if not res: print "{r}*** File {filename} doesnt exist ***{e}".format(filename=filename, r=Bcolors.RED, e=Bcolors.ENDC)
-  return res
-
-def test_number(number):
-  pattern = re.compile("0[xX][0-9a-fA-F]+|\d+")
-  res = pattern.match(number)
-
-  if not res: print "{r}*** Number {number} not valid ***{e}".format(number=number, r=Bcolors.RED, e=Bcolors.ENDC)
-  return res
-
 def main():
   print_banner()
   args = docopt(__doc__, version='0.1')
@@ -45,8 +32,9 @@ def main():
   if args["search"] == True:
     CONTINUE = CONTINUE and test_file(args["<file_name>"])
     CONTINUE = CONTINUE and test_number(args["--size"])
+    CONTINUE = CONTINUE and test_bytes(args["--bytes"])
 
-    if CONTINUE: search(args["<file_name>"], args["--size"])
+    if CONTINUE: search(args["<file_name>"], args["--size"], args["--bytes"])
 
   elif args["inject"] == True:
     CONTINUE = CONTINUE and test_file(args["<payload>"])

@@ -2,13 +2,13 @@ from utils import *
 from formats import * 
 from struct import *
 
-def search_cave(name, body, cave_size, file_offset, vaddr, infos=""):
+def search_cave(name, body, cave_size, file_offset, vaddr, infos, _bytes):
   null_count = 0
 
   for offset in xrange(len(body)):
     byte = body[offset]
 
-    if byte == "\x00":
+    if byte in _bytes:
       null_count += 1
     else:
       if null_count >= cave_size:
@@ -35,16 +35,16 @@ def parse_macho_flags(byte):
 def parse_sh_flags(byte):
   ret = []
 
-  if 0x1 & byte == 0x1: ret.append("SHF_WRITE")
-  if 0x2 & byte == 0x2: ret.append("SHF_ALLOC")
-  if 0x4 & byte == 0x4: ret.append("SHF_EXECINSTR")
-  if 0x10 & byte == 0x20: ret.append("SHF_MERGE")
-  if 0x20 & byte == 0x20: ret.append("SHF_STRINGS")
-  if 0x40 & byte == 0x40: ret.append("SHF_INFO_LINK")
-  if 0x80 & byte == 0x80: ret.append("SHF_LINK_ORDER")
-  if 0x100 & byte == 0x100: ret.append("SHF_OS_NONCONFORMING")
-  if 0x200 & byte == 0x200: ret.append("SHF_GROUP")
-  if 0x400 & byte == 0x400: ret.append("SHF_TLS")
+  if 0x0000001 & byte == 0x0000001: ret.append("SHF_WRITE")
+  if 0x0000002 & byte == 0x0000002: ret.append("SHF_ALLOC")
+  if 0x0000004 & byte == 0x0000004: ret.append("SHF_EXECINSTR")
+  if 0x0000010 & byte == 0x0000020: ret.append("SHF_MERGE")
+  if 0x0000020 & byte == 0x0000020: ret.append("SHF_STRINGS")
+  if 0x0000040 & byte == 0x0000040: ret.append("SHF_INFO_LINK")
+  if 0x0000080 & byte == 0x0000080: ret.append("SHF_LINK_ORDER")
+  if 0x0000100 & byte == 0x0000100: ret.append("SHF_OS_NONCONFORMING")
+  if 0x0000200 & byte == 0x0000200: ret.append("SHF_GROUP")
+  if 0x0000400 & byte == 0x0000400: ret.append("SHF_TLS")
   if 0xff00000 & byte == 0xff00000: ret.append("SHF_MASKOS")
 
   return ", ".join(ret)
@@ -69,7 +69,7 @@ def parse_pe_flags(byte):
 
   return ", ".join(ret)
 
-def search_pe(filename, cavesize):
+def search_pe(filename, cavesize, _bytes):
   g = MicrosoftPe.from_file(filename)
 
   if g.optional_hdr.std.format == MicrosoftPe.PeFormat.pe32:
@@ -81,9 +81,9 @@ def search_pe(filename, cavesize):
     section_offset = section.pointer_to_raw_data
     infos = parse_pe_flags(section.characteristics)
     vaddr = section.virtual_address + base_addr
-    search_cave(section.name, section.body, cavesize, section_offset, vaddr, infos)
+    search_cave(section.name, section.body, cavesize, section_offset, vaddr, infos, _bytes)
 
-def search_macho(filename, cavesize):
+def search_macho(filename, cavesize, _bytes):
   g = MachO.from_file(filename)
 
   for command in g.load_commands:
@@ -91,30 +91,33 @@ def search_macho(filename, cavesize):
       for section in command.body.sections:
         if isinstance(section.data, str):
           infos = "init: [{}], max: [{}]".format(parse_macho_flags(command.body.initprot), parse_macho_flags(command.body.maxprot))
-          search_cave("{}.{}".format(section.seg_name, section.sect_name), section.data, cavesize, section.offset, section.addr, infos)
+          search_cave("{}.{}".format(section.seg_name, section.sect_name), section.data, cavesize, section.offset, section.addr, infos, _bytes)
 
-def search_elf(filename, cavesize):
+def search_elf(filename, cavesize, _bytes):
   g = Elf.from_file(filename)
 
   for section in g.header.section_headers:
     infos = parse_sh_flags(section.flags)
-    search_cave(section.name, section.body, cavesize, section.offset, section.addr, infos)
+    search_cave(section.name, section.body, cavesize, section.offset, section.addr, infos, _bytes)
 
-def detect_type(filename, cavesize):
+def detect_type(filename, cavesize, _bytes):
   data = open(filename, "rb").read()
 
   mz    = "MZ"
   elf   = "\x7FELF"
   macho = pack("I", 0xfeedfacf)
 
-  if   data[0x0:0x2] == mz:    search_pe(filename, cavesize)
-  elif data[0x0:0x4] == elf:   search_elf(filename, cavesize)
-  elif data[0x0:0x4] == macho: search_macho(filename, cavesize)
+  if   data[0x0:0x2] == mz:    search_pe(filename, cavesize, _bytes)
+  elif data[0x0:0x4] == elf:   search_elf(filename, cavesize, _bytes)
+  elif data[0x0:0x4] == macho: search_macho(filename, cavesize, _bytes)
 
-def search(filename, cavesize):
+def search(filename, cavesize, bytes_arg):
   print "{}[*]{} Starting cave mining process...{}".format(Bcolors.YELLOW, Bcolors.BOLD, Bcolors.ENDC)
+  print "   {} Searching for bytes: {}...{}".format(Bcolors.BOLD, ", ".join(bytes_arg), Bcolors.ENDC)
   print
 
-  detect_type(filename, parse_int(cavesize))
+  _bytes = map(lambda e: chr(int(e, 16)), bytes_arg)
+
+  detect_type(filename, parse_int(cavesize), _bytes)
 
   print "{}[*]{} Mining finished.{}".format(Bcolors.YELLOW, Bcolors.BOLD, Bcolors.ENDC)
