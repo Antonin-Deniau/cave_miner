@@ -1,7 +1,7 @@
 from utils import *
 
 def inject(payload_name, file_name, straddr):
-  print "{}[*]{} Starting injection into binary...{}".format(Bcolors.YELLOW, Bcolors.BOLD, Bcolors.ENDC)
+  print(color("{yellow}[*]{bold} Starting injection into binary...{endc}"))
   print
   addr = parse_int(straddr)
 
@@ -14,4 +14,4 @@ def inject(payload_name, file_name, straddr):
   f.write(res)
   f.close()
 
-  print "{}[*]{} Injection finished.{}".format(Bcolors.YELLOW, Bcolors.BOLD, Bcolors.ENDC)
+  print(color("{yellow}[*]{bold} Injection finished.{endc}"))

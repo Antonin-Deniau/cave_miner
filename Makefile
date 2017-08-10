@@ -1,6 +1,10 @@
+PIP=pip2.7
+PYTHON=python
+
 .PHONY: install publish
+
 install:
-	pip install -e $(pwd)/
+	$(PIP) install -e .
 publish:
-	python setup.py sdist bdist_wininst upload
+	$(PYTHON) setup.py sdist bdist_wininst upload
 	rm -fr build dist .egg requests.egg-info

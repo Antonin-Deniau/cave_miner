@@ -12,7 +12,7 @@ def search_cave(name, body, cave_size, file_offset, vaddr, infos, _bytes):
       null_count += 1
     else:
       if null_count >= cave_size:
-        print "{}[*]{} New cave detected !{}".format(Bcolors.YELLOW, Bcolors.BOLD, Bcolors.ENDC)
+        print(color("{yellow}[*]{bold} New cave detected !{endc}"))
         print "  section_name: {}".format(name)
         print "  cave_begin:   0x{:08x}".format(file_offset + offset - null_count)
         print "  cave_end:     0x{:08x}".format(file_offset + offset)
@@ -112,12 +112,12 @@ def detect_type(filename, cavesize, _bytes):
   elif data[0x0:0x4] == macho: search_macho(filename, cavesize, _bytes)
 
 def search(filename, cavesize, bytes_arg):
-  print "{}[*]{} Starting cave mining process...{}".format(Bcolors.YELLOW, Bcolors.BOLD, Bcolors.ENDC)
-  print "   {} Searching for bytes: {}...{}".format(Bcolors.BOLD, ", ".join(bytes_arg), Bcolors.ENDC)
+  print(color("{yellow}[*]{bold} Starting cave mining process...{endc}"))
+  print(color("   {{bold}} Searching for bytes: {}...{{endc}}".format(", ".join(bytes_arg))))
   print
 
   _bytes = map(lambda e: chr(int(e, 16)), bytes_arg)
 
   detect_type(filename, parse_int(cavesize), _bytes)
 
-  print "{}[*]{} Mining finished.{}".format(Bcolors.YELLOW, Bcolors.BOLD, Bcolors.ENDC)
+  print(color("{yellow}[*]{bold} Mining finished.{endc}"))

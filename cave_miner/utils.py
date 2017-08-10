@@ -13,3 +13,12 @@ class Bcolors:
   GREY = '\033[37m'
   BOLD = '\033[1m'
   RED = '\033[31m'
+
+def color(tpl):
+  return tpl.format(
+          green=Bcolors.GREEN,
+          yellow=Bcolors.YELLOW,
+          endc=Bcolors.ENDC,
+          grey=Bcolors.GREY,
+          bold=Bcolors.BOLD,
+          red=Bcolors.RED)

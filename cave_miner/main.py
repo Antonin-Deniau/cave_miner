@@ -15,14 +15,20 @@ from docopt import docopt
 from cave_miner import *
 
 def print_banner():
-  print """
-    {gy}/========\{e}
-   {gy}/{e}    {gn}||{e}    {gy}\{e}
-        {gn}||{e}
-        {gn}||{e}
-        {gn}||{e}
-   CAVE {gn}||{e} MINER
-  """.format(gy=Bcolors.GREY, gn=Bcolors.GREEN, e=Bcolors.ENDC)
+  banner = """
+    /========\\
+   /    ||    \\
+        ||
+        ||
+        ||
+   CAVE || MINER
+  """
+  banner = banner.replace('/', '{grey}/{endc}')
+  banner = banner.replace('\\', '{grey}\\{endc}')
+  banner = banner.replace('=', '{grey}={endc}')
+  banner = banner.replace('||', '{green}||{endc}')
+
+  print(color(banner))
 
 def main():
   print_banner()
