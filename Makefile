@@ -6,5 +6,5 @@ PYTHON=python
 install:
 	$(PIP) install -e .
 publish:
-	$(PYTHON) setup.py sdist bdist_wininst upload
+	$(PYTHON) setup.py sdist upload
 	rm -fr build dist .egg requests.egg-info
