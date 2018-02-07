@@ -1,6 +1,7 @@
-from utils import *
-from formats import * 
+from .utils import *
+from .formats import * 
 from struct import *
+from past.builtins import xrange
 
 def search_cave(name, body, cave_size, file_offset, vaddr, infos, _bytes):
   null_count = 0
@@ -13,13 +14,12 @@ def search_cave(name, body, cave_size, file_offset, vaddr, infos, _bytes):
     else:
       if null_count >= cave_size:
         print(color("{yellow}[*]{bold} New cave detected !{endc}"))
-        print "  section_name: {}".format(name)
-        print "  cave_begin:   0x{:08x}".format(file_offset + offset - null_count)
-        print "  cave_end:     0x{:08x}".format(file_offset + offset)
-        print "  cave_size:    0x{:08x}".format(null_count)
-        print "  vaddress:     0x{:08x}".format(vaddr + offset - null_count)
-        print "  infos:        {}".format(infos)
-        print
+        print("  section_name: {}".format(name))
+        print("  cave_begin:   0x{:08x}".format(file_offset + offset - null_count))
+        print("  cave_end:     0x{:08x}".format(file_offset + offset))
+        print("  cave_size:    0x{:08x}".format(null_count))
+        print("  vaddress:     0x{:08x}".format(vaddr + offset - null_count))
+        print("  infos:        {}".format(infos))
 
       null_count = 0
 
@@ -103,8 +103,8 @@ def search_elf(filename, cavesize, _bytes):
 def detect_type(filename, cavesize, _bytes):
   data = open(filename, "rb").read()
 
-  mz    = "MZ"
-  elf   = "\x7FELF"
+  mz    = b"MZ"
+  elf   = b"\x7FELF"
   macho = pack("I", 0xfeedfacf)
 
   if   data[0x0:0x2] == mz:    search_pe(filename, cavesize, _bytes)
@@ -116,7 +116,7 @@ def search(filename, cavesize, bytes_arg):
   print(color("   {{bold}} Searching for bytes: {}...{{endc}}".format(", ".join(bytes_arg))))
   print
 
-  _bytes = map(lambda e: chr(int(e, 16)), bytes_arg)
+  _bytes = bytes(map(lambda e: int(e, 16), bytes_arg))
 
   detect_type(filename, parse_int(cavesize), _bytes)
 

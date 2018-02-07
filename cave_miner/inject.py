@@ -1,4 +1,4 @@
-from utils import *
+from .utils import *
 
 def inject(payload_name, file_name, straddr):
   print(color("{yellow}[*]{bold} Starting injection into binary...{endc}"))

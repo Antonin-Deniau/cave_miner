@@ -1,6 +1,6 @@
 import os.path
 import re
-from utils import *
+from .utils import *
 
 def test_file(filename):
   res = os.path.isfile(filename)

@@ -99,6 +99,8 @@ class Elf(KaitaiStruct):
         tls = 7
         gnu_eh_frame = 1685382480
         gnu_stack = 1685382481
+        gnu_relro = 1685382482
+        pax_flags = 1694766464
         hios = 1879048191
 
     class ObjType(Enum):
@@ -127,6 +129,9 @@ class Elf(KaitaiStruct):
             self._io = _io
             self._parent = _parent
             self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
             _on = self._root.endian
             if _on == self._root.Endian.le:
                 self._is_le = True
@@ -200,6 +205,9 @@ class Elf(KaitaiStruct):
                 self._parent = _parent
                 self._root = _root if _root else self
                 self._is_le = _is_le
+                self._read()
+
+            def _read(self):
 
                 if self._is_le == True:
                     self._read_le()
@@ -293,6 +301,9 @@ class Elf(KaitaiStruct):
                 self._parent = _parent
                 self._root = _root if _root else self
                 self._is_le = _is_le
+                self._read()
+
+            def _read(self):
 
                 if self._is_le == True:
                     self._read_le()
@@ -410,6 +421,9 @@ class Elf(KaitaiStruct):
                 self._parent = _parent
                 self._root = _root if _root else self
                 self._is_le = _is_le
+                self._read()
+
+            def _read(self):
 
                 if self._is_le == True:
                     self._read_le()
@@ -420,14 +434,18 @@ class Elf(KaitaiStruct):
 
             def _read_le(self):
                 self.entries = []
+                i = 0
                 while not self._io.is_eof():
                     self.entries.append((self._io.read_bytes_term(0, False, True, True)).decode(u"ASCII"))
+                    i += 1
 
 
             def _read_be(self):
                 self.entries = []
+                i = 0
                 while not self._io.is_eof():
                     self.entries.append((self._io.read_bytes_term(0, False, True, True)).decode(u"ASCII"))
+                    i += 1
 
 
 
