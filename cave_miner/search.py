@@ -1,5 +1,5 @@
-from utils import *
-from formats import * 
+from .utils import *
+from .formats import * 
 from struct import *
 
 def search_cave(name, body, cave_size, file_offset, vaddr, infos, _bytes):
