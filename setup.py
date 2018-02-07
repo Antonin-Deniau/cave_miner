@@ -35,7 +35,7 @@ setup(
 
     entry_points={
       'console_scripts': [
-        'cave_miner=cave_miner.main:main',
+        'cave_miner=cave_miner.__main__:main',
       ],
     },
 )

@@ -12,7 +12,7 @@ Options:
   --bytes=<bytes>  The bytes used in the code cave [default: 0x00]
 """
 from docopt import docopt
-from cave_miner import *
+from . import *
 
 def print_banner():
   banner = """
@@ -48,3 +48,6 @@ def main():
     CONTINUE = CONTINUE and test_number(args["<address>"])
 
     if CONTINUE: inject(args["<payload>"], args["<file_name>"], args["<address>"])
+
+if __name__ == "__main__":
+	main()
