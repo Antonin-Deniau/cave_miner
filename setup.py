@@ -7,6 +7,11 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
+from pathlib import Path
+thisDir=Path(__file__).parent
+formatsPath=thisDir / "kaitai_struct_formats"
+execFormatsPath=formatsPath / "executable"
+
 setup(
     name='cave_miner',
     version='1.8.0',
@@ -38,4 +43,18 @@ setup(
         'cave_miner=cave_miner.__main__:main',
       ],
     },
+    dependency_links = ["git+https://github.com/KOLANICH/kaitaiStructCompile.py.git"],
+    kaitai={
+        "formatsRepo": {
+            "localPath" : str(formatsPath),
+            "update": True
+        },
+        "formats":{
+            "mach_o.py": {"path": "mach_o.ksy"},
+            "elf.py": {"path": "elf.ksy"},
+            "microsoft_pe.py": {"path": "microsoft_pe.ksy"},
+        },
+        "outputDir": thisDir / "cave_miner" / "formats",
+        "inputDir": execFormatsPath
+    }
 )
