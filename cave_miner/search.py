@@ -4,24 +4,33 @@ from struct import *
 
 def search_cave(name, body, cave_size, file_offset, vaddr, infos, _bytes):
   null_count = 0
+  size = len(body)
 
-  for offset in xrange(len(body)):
+  for offset in xrange(size):
     byte = body[offset]
+    check=False
 
     if byte in _bytes:
       null_count += 1
     else:
+      check=True
+
+    if offset == size - 1:
+        check=True
+        offset += 1
+
+    if check:
       if null_count >= cave_size:
         print(color("{yellow}[*]{bold} New cave detected !{endc}"))
         print "  section_name: {}".format(name)
         print "  cave_begin:   0x{:08x}".format(file_offset + offset - null_count)
         print "  cave_end:     0x{:08x}".format(file_offset + offset)
-        print "  cave_size:    0x{:08x}".format(null_count)
+        print "  cave_size:    0x{:08x} ({} bytes)".format(null_count,null_count)
         print "  vaddress:     0x{:08x}".format(vaddr + offset - null_count)
         print "  infos:        {}".format(infos)
         print
-
       null_count = 0
+
 
 def parse_macho_flags(byte):
   ret = []
@@ -81,7 +90,15 @@ def search_pe(filename, cavesize, _bytes):
     section_offset = section.pointer_to_raw_data
     infos = parse_pe_flags(section.characteristics)
     vaddr = section.virtual_address + base_addr
-    search_cave(section.name, section.body, cavesize, section_offset, vaddr, infos, _bytes)
+
+    '''
+    Calculate difference between VirtualSize and RawSize
+    If the RawSize is greater than VirtualSize the system will fill the difference with Zeros, so this space is an code cave
+    '''
+    body = section.body
+    if section.size_of_raw_data > section.virtual_size:
+        body += "\x00" * (section.size_of_raw_data - section.virtual_size) 
+    search_cave(section.name, body, cavesize, section_offset, vaddr, infos, _bytes)
 
 def search_macho(filename, cavesize, _bytes):
   g = MachO.from_file(filename)
