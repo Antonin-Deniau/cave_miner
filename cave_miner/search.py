@@ -134,7 +134,7 @@ def search_pe(filename, cavesize, _bytes):
     """
         body = section.body
         if section.size_of_raw_data > section.virtual_size:
-            body += "\x00" * (section.size_of_raw_data - section.virtual_size)
+            body += b"\x00" * (section.size_of_raw_data - section.virtual_size)
         search_cave(section.name, body, cavesize, section_offset, vaddr, infos, _bytes)
 
 
