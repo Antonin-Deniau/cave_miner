@@ -45,14 +45,57 @@ def test_elf_parser():
         return False
 
 
+def create_pe_binary(filepath):
+    """Create a PE binary using MinGW cross-compiler if available"""
+    import subprocess
+    import tempfile
+
+    # Check if mingw is available
+    try:
+        result = subprocess.run(['which', 'x86_64-w64-mingw32-gcc'],
+                              capture_output=True, text=True)
+        if result.returncode != 0:
+            return None
+    except:
+        return None
+
+    # Create a simple C program
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.c', delete=False) as f:
+        f.write("""
+#include <stdio.h>
+int main() {
+    printf("Test PE binary\\n");
+    return 0;
+}
+""")
+        c_file = f.name
+
+    try:
+        # Compile with MinGW
+        result = subprocess.run(
+            ['x86_64-w64-mingw32-gcc', c_file, '-o', filepath],
+            capture_output=True, text=True, timeout=10
+        )
+        os.unlink(c_file)
+
+        if result.returncode == 0 and os.path.exists(filepath):
+            return filepath
+        return None
+    except:
+        if os.path.exists(c_file):
+            os.unlink(c_file)
+        return None
+
+
 def test_pe_parser():
     """Test PE parser with a real binary"""
     print("=" * 60)
     print("TEST 2: PE Parser")
     print("=" * 60)
 
-    # Look for a PE binary (might not exist on Linux)
+    # Look for existing PE binaries
     pe_locations = [
+        "/tmp/test.exe",
         "/usr/share/wine/wine/notepad.exe",
         "/usr/lib/wine/notepad.exe",
     ]
@@ -63,10 +106,16 @@ def test_pe_parser():
             pe_binary = location
             break
 
+    # If no PE binary found, try to create one
     if not pe_binary:
-        print("❌ SKIP: No PE binary found (expected on Linux)")
-        print("   To test PE parser, provide a Windows .exe file\n")
-        return None
+        print("No existing PE binary found, attempting to create one...")
+        pe_binary = create_pe_binary("/tmp/test_pe_created.exe")
+        if pe_binary:
+            print(f"✓ Created test PE binary at {pe_binary}")
+        else:
+            print("❌ SKIP: Cannot create PE binary (MinGW not available)")
+            print("   Install gcc-mingw-w64-x86-64 to enable PE testing\n")
+            return None
 
     try:
         print(f"Testing with: {pe_binary}")
@@ -92,30 +141,75 @@ def test_pe_parser():
         return False
 
 
+def create_minimal_macho(filepath):
+    """Create a minimal valid Mach-O binary for testing"""
+    import struct
+
+    # Mach-O 64-bit constants
+    MH_MAGIC_64 = 0xFEEDFACF
+    CPU_TYPE_X86_64 = 0x01000007
+    CPU_SUBTYPE_X86_64_ALL = 0x00000003
+    MH_EXECUTE = 0x00000002
+    LC_SEGMENT_64 = 0x19
+
+    data = bytearray()
+
+    # Mach-O header
+    data += struct.pack('<I', MH_MAGIC_64)
+    data += struct.pack('<I', CPU_TYPE_X86_64)
+    data += struct.pack('<I', CPU_SUBTYPE_X86_64_ALL)
+    data += struct.pack('<I', MH_EXECUTE)
+    data += struct.pack('<I', 1)  # ncmds
+    data += struct.pack('<I', 72)  # sizeofcmds
+    data += struct.pack('<I', 0)  # flags
+    data += struct.pack('<I', 0)  # reserved
+
+    # LC_SEGMENT_64 command
+    data += struct.pack('<I', LC_SEGMENT_64)
+    data += struct.pack('<I', 72)
+    data += b'__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    data += struct.pack('<Q', 0)  # vmaddr
+    data += struct.pack('<Q', 0x1000)  # vmsize
+    data += struct.pack('<Q', 0)  # fileoff
+    data += struct.pack('<Q', 0x1000)  # filesize
+    data += struct.pack('<I', 7)  # maxprot
+    data += struct.pack('<I', 5)  # initprot
+    data += struct.pack('<I', 0)  # nsects
+    data += struct.pack('<I', 0)  # flags
+
+    # Pad to match filesize
+    data += b'\x00' * (0x1000 - len(data))
+
+    with open(filepath, 'wb') as f:
+        f.write(data)
+
+    return filepath
+
+
 def test_macho_parser():
     """Test Mach-O parser with a real binary"""
     print("=" * 60)
     print("TEST 3: Mach-O Parser")
     print("=" * 60)
 
-    # Mach-O binaries are typically on macOS, won't exist on Linux
-    macho_binary = "/bin/ls"  # Would be Mach-O on macOS
+    # Try to find an existing Mach-O binary
+    macho_binary = None
+    test_paths = ["/bin/ls", "/usr/bin/file"]
 
-    # Check if it's actually a Mach-O file
-    if os.path.exists(macho_binary):
-        with open(macho_binary, 'rb') as f:
-            magic = f.read(4)
-            if magic == b'\xfe\xed\xfa\xcf' or magic == b'\xfe\xed\xfa\xce':
-                is_macho = True
-            else:
-                is_macho = False
-    else:
-        is_macho = False
+    for path in test_paths:
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                magic = f.read(4)
+                if magic == b'\xfe\xed\xfa\xcf' or magic == b'\xfe\xed\xfa\xce':
+                    macho_binary = path
+                    break
 
-    if not is_macho:
-        print("❌ SKIP: No Mach-O binary found (expected on non-macOS)")
-        print("   To test Mach-O parser, provide a macOS binary\n")
-        return None
+    # If no Mach-O binary found, create a minimal one
+    if not macho_binary:
+        print("No native Mach-O binary found, creating test binary...")
+        macho_binary = "/tmp/test_macho"
+        create_minimal_macho(macho_binary)
+        print(f"✓ Created test Mach-O binary at {macho_binary}")
 
     try:
         print(f"Testing with: {macho_binary}")
