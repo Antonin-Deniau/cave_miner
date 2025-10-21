@@ -12,10 +12,10 @@ Options:
 """
 
 from docopt import docopt
-from utils import color
-from tests import test_file, test_number, test_bytes
-from search import search
-from inject import inject
+from .utils import color
+from .tests import test_file, test_number, test_bytes
+from .search import search
+from .inject import inject
 
 # Print banner
 banner = """

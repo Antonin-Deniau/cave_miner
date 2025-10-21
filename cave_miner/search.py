@@ -1,7 +1,7 @@
 from struct import pack
 
-from utils import color, parse_int
-from formats import MachO, Pe, Elf
+from .utils import color, parse_int
+from .formats import MachO, Pe, Elf
 
 
 def search_cave(name, body, cave_size, file_offset, vaddr, infos, _bytes):

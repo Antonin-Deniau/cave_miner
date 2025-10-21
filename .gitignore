@@ -2,9 +2,5 @@ dist/
 build/
 .venv/
 *.egg-info/
-cave_miner/formats/mach_o.py
-cave_miner/formats/pe.py
-cave_miner/formats/asn1_der.py
-cave_miner/formats/elf.py
 *.swp
 *.pyc
