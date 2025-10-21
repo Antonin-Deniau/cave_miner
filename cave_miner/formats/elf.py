@@ -27,6 +27,6 @@ class Elf:
     @classmethod
     def from_file(cls, filename):
         binary = lief.parse(filename)
-        if binary is None or binary.format != lief.EXE_FORMATS.ELF:
+        if binary is None or not isinstance(binary, lief.ELF.Binary):
             raise ValueError(f"File {filename} is not a valid ELF file")
         return cls(binary)

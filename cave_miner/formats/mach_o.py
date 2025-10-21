@@ -49,6 +49,6 @@ class MachO:
     @classmethod
     def from_file(cls, filename):
         binary = lief.parse(filename)
-        if binary is None or binary.format != lief.EXE_FORMATS.MACHO:
+        if binary is None or not isinstance(binary, lief.MachO.Binary):
             raise ValueError(f"File {filename} is not a valid Mach-O file")
         return cls(binary)

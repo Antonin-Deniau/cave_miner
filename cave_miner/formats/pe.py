@@ -47,6 +47,6 @@ class Pe:
     @classmethod
     def from_file(cls, filename):
         binary = lief.parse(filename)
-        if binary is None or binary.format != lief.EXE_FORMATS.PE:
+        if binary is None or not isinstance(binary, lief.PE.Binary):
             raise ValueError(f"File {filename} is not a valid PE file")
         return cls(binary)

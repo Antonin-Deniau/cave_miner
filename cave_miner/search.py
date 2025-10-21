@@ -166,8 +166,6 @@ def search_elf(filename, cavesize, _bytes):
     for section in g.header.section_headers:
         infos = parse_sh_flags(section.flags)
 
-        print(section.body)
-        print(dir(section.body))
         search_cave(
             section.name,
             section.body,
@@ -207,7 +205,7 @@ def search(filename, cavesize, bytes_arg):
     )
     print()
 
-    _bytes = map(lambda e: chr(int(e, 16)), bytes_arg)
+    _bytes = list(map(lambda e: int(e, 16), bytes_arg))
 
     detect_type(filename, parse_int(cavesize), _bytes)
 
