@@ -142,7 +142,7 @@ def test_pe_parser():
 
 
 def create_minimal_macho(filepath):
-    """Create a minimal valid Mach-O binary for testing"""
+    """Create a minimal valid Mach-O binary with sections for testing"""
     import struct
 
     # Mach-O 64-bit constants
@@ -151,33 +151,67 @@ def create_minimal_macho(filepath):
     CPU_SUBTYPE_X86_64_ALL = 0x00000003
     MH_EXECUTE = 0x00000002
     LC_SEGMENT_64 = 0x19
+    SECTION_64_SIZE = 80
 
     data = bytearray()
 
-    # Mach-O header
+    # Mach-O header (32 bytes)
     data += struct.pack('<I', MH_MAGIC_64)
     data += struct.pack('<I', CPU_TYPE_X86_64)
     data += struct.pack('<I', CPU_SUBTYPE_X86_64_ALL)
     data += struct.pack('<I', MH_EXECUTE)
     data += struct.pack('<I', 1)  # ncmds
-    data += struct.pack('<I', 72)  # sizeofcmds
+    data += struct.pack('<I', 72 + (2 * SECTION_64_SIZE))  # sizeofcmds
     data += struct.pack('<I', 0)  # flags
     data += struct.pack('<I', 0)  # reserved
 
     # LC_SEGMENT_64 command
     data += struct.pack('<I', LC_SEGMENT_64)
-    data += struct.pack('<I', 72)
+    data += struct.pack('<I', 72 + (2 * SECTION_64_SIZE))
     data += b'__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    data += struct.pack('<Q', 0)  # vmaddr
+    data += struct.pack('<Q', 0x100000000)  # vmaddr
     data += struct.pack('<Q', 0x1000)  # vmsize
     data += struct.pack('<Q', 0)  # fileoff
     data += struct.pack('<Q', 0x1000)  # filesize
     data += struct.pack('<I', 7)  # maxprot
     data += struct.pack('<I', 5)  # initprot
-    data += struct.pack('<I', 0)  # nsects
+    data += struct.pack('<I', 2)  # nsects - 2 sections
     data += struct.pack('<I', 0)  # flags
 
-    # Pad to match filesize
+    # Section 1: __text
+    data += b'__text\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    data += b'__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    data += struct.pack('<Q', 0x100000000)
+    data += struct.pack('<Q', 0x100)
+    data += struct.pack('<I', 0x100)
+    data += struct.pack('<I', 4)
+    data += struct.pack('<I', 0)
+    data += struct.pack('<I', 0)
+    data += struct.pack('<I', 0x80000400)
+    data += struct.pack('<I', 0)
+    data += struct.pack('<I', 0)
+    data += struct.pack('<I', 0)
+
+    # Section 2: __const
+    data += b'__const\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    data += b'__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    data += struct.pack('<Q', 0x100000100)
+    data += struct.pack('<Q', 0x50)
+    data += struct.pack('<I', 0x200)
+    data += struct.pack('<I', 3)
+    data += struct.pack('<I', 0)
+    data += struct.pack('<I', 0)
+    data += struct.pack('<I', 0)
+    data += struct.pack('<I', 0)
+    data += struct.pack('<I', 0)
+    data += struct.pack('<I', 0)
+
+    # Pad and add section data
+    current_size = len(data)
+    data += b'\x00' * (0x100 - current_size)
+    data += b'\x90' * 0x100  # __text section data
+    data += b'\x00' * (0x200 - len(data))
+    data += b'Mach-O test data\x00' * 5  # __const section data
     data += b'\x00' * (0x1000 - len(data))
 
     with open(filepath, 'wb') as f:
@@ -218,16 +252,19 @@ def test_macho_parser():
         print(f"✓ Successfully parsed Mach-O binary")
         print(f"✓ Number of load commands: {len(macho.load_commands)}")
 
-        # Display segments
+        # Display segments and sections
         segment_count = 0
+        total_sections = 0
         for cmd in macho.load_commands:
             if cmd.type == MachO.LoadCommandType.segment_64:
                 segment_count += 1
                 if cmd.body and cmd.body.sections:
-                    print(f"\nSegment {segment_count} sections:")
-                    for section in cmd.body.sections[:3]:
-                        print(f"  {section.seg_name}.{section.sect_name:20s} - addr: 0x{section.addr:08x}")
+                    total_sections += len(cmd.body.sections)
+                    print(f"\nSegment {segment_count} - {len(cmd.body.sections)} section(s):")
+                    for i, section in enumerate(cmd.body.sections):
+                        print(f"  [{i}] {section.seg_name}.{section.sect_name:20s} - addr: 0x{section.addr:016x}, offset: 0x{section.offset:08x}, size: {len(section.data)} bytes")
 
+        print(f"\n✓ Total sections found: {total_sections}")
         print("✅ Mach-O parser test PASSED\n")
         return True
 

@@ -46,12 +46,13 @@ jobs:
         python3 << 'EOF'
         import struct
 
-        # Create a minimal valid Mach-O 64-bit binary
+        # Create Mach-O binary with sections
         MH_MAGIC_64 = 0xFEEDFACF
         CPU_TYPE_X86_64 = 0x01000007
         CPU_SUBTYPE_X86_64_ALL = 0x00000003
         MH_EXECUTE = 0x00000002
         LC_SEGMENT_64 = 0x19
+        SECTION_64_SIZE = 80
 
         data = bytearray()
 
@@ -60,30 +61,64 @@ jobs:
         data += struct.pack('<I', CPU_TYPE_X86_64)
         data += struct.pack('<I', CPU_SUBTYPE_X86_64_ALL)
         data += struct.pack('<I', MH_EXECUTE)
-        data += struct.pack('<I', 1)  # ncmds
-        data += struct.pack('<I', 72)  # sizeofcmds
-        data += struct.pack('<I', 0)  # flags
-        data += struct.pack('<I', 0)  # reserved
+        data += struct.pack('<I', 1)
+        data += struct.pack('<I', 72 + (2 * SECTION_64_SIZE))
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
 
         # LC_SEGMENT_64 command
         data += struct.pack('<I', LC_SEGMENT_64)
-        data += struct.pack('<I', 72)
+        data += struct.pack('<I', 72 + (2 * SECTION_64_SIZE))
         data += b'__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-        data += struct.pack('<Q', 0)  # vmaddr
-        data += struct.pack('<Q', 0x1000)  # vmsize
-        data += struct.pack('<Q', 0)  # fileoff
-        data += struct.pack('<Q', 0x1000)  # filesize
-        data += struct.pack('<I', 7)  # maxprot
-        data += struct.pack('<I', 5)  # initprot
-        data += struct.pack('<I', 0)  # nsects
-        data += struct.pack('<I', 0)  # flags
+        data += struct.pack('<Q', 0x100000000)
+        data += struct.pack('<Q', 0x1000)
+        data += struct.pack('<Q', 0)
+        data += struct.pack('<Q', 0x1000)
+        data += struct.pack('<I', 7)
+        data += struct.pack('<I', 5)
+        data += struct.pack('<I', 2)  # 2 sections
+        data += struct.pack('<I', 0)
 
+        # Section 1: __text
+        data += b'__text\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        data += b'__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        data += struct.pack('<Q', 0x100000000)
+        data += struct.pack('<Q', 0x100)
+        data += struct.pack('<I', 0x100)
+        data += struct.pack('<I', 4)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0x80000400)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+
+        # Section 2: __const
+        data += b'__const\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        data += b'__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        data += struct.pack('<Q', 0x100000100)
+        data += struct.pack('<Q', 0x50)
+        data += struct.pack('<I', 0x200)
+        data += struct.pack('<I', 3)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+
+        # Pad and add section data
+        current_size = len(data)
+        data += b'\x00' * (0x100 - current_size)
+        data += b'\x90' * 0x100
+        data += b'\x00' * (0x200 - len(data))
+        data += b'Mach-O test data\x00' * 5
         data += b'\x00' * (0x1000 - len(data))
 
         with open('/tmp/test_macho', 'wb') as f:
             f.write(data)
 
-        print(f"Created Mach-O test binary: {len(data)} bytes")
+        print(f"Created Mach-O test binary with 2 sections: {len(data)} bytes")
         EOF
         file /tmp/test_macho
 
