@@ -110,9 +110,12 @@ jobs:
         # Pad and add section data
         current_size = len(data)
         data += b'\x00' * (0x100 - current_size)
-        data += b'\x90' * 0x100
-        data += b'\x00' * (0x200 - len(data))
-        data += b'Mach-O test data\x00' * 5
+        # __text section: some code then padding
+        data += b'\x90' * 0x50  # Some NOP instructions
+        data += b'\x00' * 0xB0  # Large null byte area (176 bytes)
+        # __const section: some data then padding
+        data += b'Mach-O test data\x00'
+        data += b'\x00' * 0x40  # Large null byte area (64 bytes)
         data += b'\x00' * (0x1000 - len(data))
 
         with open('/tmp/test_macho', 'wb') as f:
@@ -172,22 +175,101 @@ jobs:
 
     - name: Test ELF cave search
       run: |
+        echo "Testing ELF cave search on /bin/ls..."
         python3 -m cave_miner search --size=64 --bytes=0x00 /bin/ls > /tmp/elf_output.txt
-        if grep -q "New cave detected" /tmp/elf_output.txt; then
-          echo "✅ ELF cave search: Found code caves"
-          grep "New cave detected" /tmp/elf_output.txt | wc -l
+
+        # Validate output
+        if grep -q "Starting cave mining process" /tmp/elf_output.txt && \
+           grep -q "Mining finished" /tmp/elf_output.txt; then
+          echo "✅ ELF cave search: Process completed successfully"
+
+          if grep -q "New cave detected" /tmp/elf_output.txt; then
+            CAVE_COUNT=$(grep -c "New cave detected" /tmp/elf_output.txt)
+            echo "✅ Found $CAVE_COUNT code cave(s)"
+
+            # Validate cave details are present
+            if grep -q "section_name:" /tmp/elf_output.txt && \
+               grep -q "cave_begin:" /tmp/elf_output.txt && \
+               grep -q "cave_size:" /tmp/elf_output.txt && \
+               grep -q "vaddress:" /tmp/elf_output.txt; then
+              echo "✅ Cave details validated (section, address, size)"
+            else
+              echo "❌ Missing cave detail fields"
+              exit 1
+            fi
+          else
+            echo "⚠️  No caves found (acceptable for this binary)"
+          fi
         else
-          echo "⚠️  ELF cave search: No caves found (acceptable)"
+          echo "❌ ELF cave search failed to complete"
+          cat /tmp/elf_output.txt
+          exit 1
         fi
 
     - name: Test PE cave search
       run: |
+        echo "Testing PE cave search on /tmp/test.exe..."
         python3 -m cave_miner search --size=64 --bytes=0x00 /tmp/test.exe > /tmp/pe_output.txt
-        if grep -q "New cave detected" /tmp/pe_output.txt; then
-          echo "✅ PE cave search: Found code caves"
-          grep "New cave detected" /tmp/pe_output.txt | wc -l
+
+        # Validate output
+        if grep -q "Starting cave mining process" /tmp/pe_output.txt && \
+           grep -q "Mining finished" /tmp/pe_output.txt; then
+          echo "✅ PE cave search: Process completed successfully"
+
+          if grep -q "New cave detected" /tmp/pe_output.txt; then
+            CAVE_COUNT=$(grep -c "New cave detected" /tmp/pe_output.txt)
+            echo "✅ Found $CAVE_COUNT code cave(s)"
+
+            # Validate cave details are present
+            if grep -q "section_name:" /tmp/pe_output.txt && \
+               grep -q "cave_begin:" /tmp/pe_output.txt && \
+               grep -q "cave_size:" /tmp/pe_output.txt && \
+               grep -q "vaddress:" /tmp/pe_output.txt; then
+              echo "✅ Cave details validated (section, address, size)"
+            else
+              echo "❌ Missing cave detail fields"
+              exit 1
+            fi
+          else
+            echo "⚠️  No caves found (acceptable for this binary)"
+          fi
         else
-          echo "⚠️  PE cave search: No caves found (acceptable)"
+          echo "❌ PE cave search failed to complete"
+          cat /tmp/pe_output.txt
+          exit 1
+        fi
+
+    - name: Test Mach-O cave search
+      run: |
+        echo "Testing Mach-O cave search on /tmp/test_macho..."
+        python3 -m cave_miner search --size=32 --bytes=0x00 /tmp/test_macho > /tmp/macho_output.txt
+
+        # Validate output
+        if grep -q "Starting cave mining process" /tmp/macho_output.txt && \
+           grep -q "Mining finished" /tmp/macho_output.txt; then
+          echo "✅ Mach-O cave search: Process completed successfully"
+
+          if grep -q "New cave detected" /tmp/macho_output.txt; then
+            CAVE_COUNT=$(grep -c "New cave detected" /tmp/macho_output.txt)
+            echo "✅ Found $CAVE_COUNT code cave(s)"
+
+            # Validate cave details are present
+            if grep -q "section_name:" /tmp/macho_output.txt && \
+               grep -q "cave_begin:" /tmp/macho_output.txt && \
+               grep -q "cave_size:" /tmp/macho_output.txt && \
+               grep -q "vaddress:" /tmp/macho_output.txt; then
+              echo "✅ Cave details validated (section, address, size)"
+            else
+              echo "❌ Missing cave detail fields"
+              exit 1
+            fi
+          else
+            echo "⚠️  No caves found (acceptable for this binary)"
+          fi
+        else
+          echo "❌ Mach-O cave search failed to complete"
+          cat /tmp/macho_output.txt
+          exit 1
         fi
 
     - name: Test help command

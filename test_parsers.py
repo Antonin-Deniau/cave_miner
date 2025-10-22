@@ -209,9 +209,12 @@ def create_minimal_macho(filepath):
     # Pad and add section data
     current_size = len(data)
     data += b'\x00' * (0x100 - current_size)
-    data += b'\x90' * 0x100  # __text section data
-    data += b'\x00' * (0x200 - len(data))
-    data += b'Mach-O test data\x00' * 5  # __const section data
+    # __text section: some code then padding
+    data += b'\x90' * 0x50  # Some NOP instructions
+    data += b'\x00' * 0xB0  # Large null byte area (176 bytes)
+    # __const section: some data then padding
+    data += b'Mach-O test data\x00'
+    data += b'\x00' * 0x40  # Large null byte area (64 bytes)
     data += b'\x00' * (0x1000 - len(data))
 
     with open(filepath, 'wb') as f:

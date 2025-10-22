@@ -143,8 +143,8 @@ def search_macho(filename, cavesize, _bytes):
 
     for command in g.load_commands:
         if command.type == MachO.LoadCommandType.segment_64:
-            for section in command.body.sections:
-                if isinstance(section.data, str):
+            if command.body and command.body.sections:
+                for section in command.body.sections:
                     infos = "init: [{}], max: [{}]".format(
                         parse_macho_flags(command.body.initprot),
                         parse_macho_flags(command.body.maxprot),
