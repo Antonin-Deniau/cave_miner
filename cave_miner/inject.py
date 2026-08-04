@@ -1,4 +1,4 @@
-from utils import color, parse_int
+from .utils import color, parse_int
 
 
 def inject(payload_name: str, file_name: str, straddr: str) -> None:

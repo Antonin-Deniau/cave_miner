@@ -12,13 +12,12 @@ Options:
 """
 
 from docopt import docopt
-from utils import color
-from tests import test_file, test_number, test_bytes
-from search import search
-from inject import inject
+from .utils import color
+from .tests import test_file, test_number, test_bytes
+from .search import search
+from .inject import inject
 
-# Print banner
-banner = """
+BANNER = """
   /========\\
   /    ||    \\
       ||
@@ -26,29 +25,33 @@ banner = """
       ||
   CAVE || MINER
 """
-banner = banner.replace("/", "{grey}/{endc}")
-banner = banner.replace("\\", "{grey}\\{endc}")
-banner = banner.replace("=", "{grey}={endc}")
-banner = banner.replace("||", "{green}||{endc}")
+BANNER = BANNER.replace("/", "{grey}/{endc}")
+BANNER = BANNER.replace("\\", "{grey}\\{endc}")
+BANNER = BANNER.replace("=", "{grey}={endc}")
+BANNER = BANNER.replace("||", "{green}||{endc}")
 
-print(color(banner))
 
-# Parse arguments
-args = docopt(__doc__, version="0.1")
-CONTINUE = True
+def main():
+    print(color(BANNER))
 
-if args["search"] == True:
-    CONTINUE = CONTINUE and test_file(args["<file_name>"])
-    CONTINUE = CONTINUE and test_number(args["--size"])
-    CONTINUE = CONTINUE and test_bytes(args["--bytes"])
+    args = docopt(__doc__, version="cave_miner 2.0.0")
 
-    if CONTINUE:
-        search(args["<file_name>"], args["--size"], args["--bytes"])
+    if args["search"]:
+        ok = test_file(args["<file_name>"])
+        ok = ok and test_number(args["--size"])
+        ok = ok and test_bytes(args["--bytes"])
 
-elif args["inject"] == True:
-    CONTINUE = CONTINUE and test_file(args["<payload>"])
-    CONTINUE = CONTINUE and test_file(args["<file_name>"])
-    CONTINUE = CONTINUE and test_number(args["<address>"])
+        if ok:
+            search(args["<file_name>"], args["--size"], args["--bytes"])
 
-    if CONTINUE:
-        inject(args["<payload>"], args["<file_name>"], args["<address>"])
+    elif args["inject"]:
+        ok = test_file(args["<payload>"])
+        ok = ok and test_file(args["<file_name>"])
+        ok = ok and test_number(args["<address>"])
+
+        if ok:
+            inject(args["<payload>"], args["<file_name>"], args["<address>"])
+
+
+if __name__ == "__main__":
+    main()

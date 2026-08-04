@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cave-miner"
 version = "2.0.0"
-description = ""
+description = "Search for code caves in ELF, Mach-O and PE binaries, and inject code into them."
 authors = ["Antonin Deniau <antonin.deniau@gmail.com>"]
 readme = "README.md"
 
@@ -9,6 +9,9 @@ readme = "README.md"
 python = "^3.11"
 kaitaistruct = "^0.10"
 docopt = "^0.6.2"
+
+[tool.poetry.scripts]
+cave_miner = "cave_miner.__main__:main"
 
 
 [build-system]

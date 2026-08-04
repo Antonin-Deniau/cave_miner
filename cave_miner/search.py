@@ -1,7 +1,7 @@
 from struct import pack
 
-from utils import color, parse_int
-from formats import MachO, Pe, Elf
+from .utils import color, parse_int
+from .formats import MachO, Pe, Elf
 
 
 def search_cave(name, body, cave_size, file_offset, vaddr, infos, _bytes):
@@ -38,14 +38,14 @@ def search_cave(name, body, cave_size, file_offset, vaddr, infos, _bytes):
             null_count = 0
 
 
-def parse_macho_flags(byte):
+def parse_macho_flags(prot):
     ret = []
 
-    if 0x1 & byte == 0x1:
+    if prot.read:
         ret.append("READ")
-    if 0x2 & byte == 0x2:
+    if prot.write:
         ret.append("WRITE")
-    if 0x4 & byte == 0x4:
+    if prot.execute:
         ret.append("EXECUTE")
 
     return ", ".join(ret)
@@ -117,60 +117,68 @@ def parse_pe_flags(byte):
 
 def search_pe(filename, cavesize, _bytes):
     g = Pe.from_file(filename)
+    pe = g.pe
 
-    if g.optional_hdr.std.format == Pe.PeFormat.pe32:
-        base_addr = g.optional_hdr.windows.image_base_32
+    if pe.optional_hdr.std.format == Pe.PeFormat.pe32:
+        base_addr = pe.optional_hdr.windows.image_base_32
     else:
-        base_addr = g.optional_hdr.windows.image_base_64
+        base_addr = pe.optional_hdr.windows.image_base_64
 
-    for section in g.sections:
+    for section in pe.sections:
         section_offset = section.pointer_to_raw_data
         infos = parse_pe_flags(section.characteristics)
         vaddr = section.virtual_address + base_addr
 
-        """
-    Calculate difference between VirtualSize and RawSize
-    If the RawSize is greater than VirtualSize the system will fill the difference with Zeros, so this space is an code cave
-    """
+        # section.body already holds the full size_of_raw_data bytes stored on
+        # disk. When size_of_raw_data > virtual_size, the trailing slack is zero
+        # padding present in the file, so it is included here and shows up as a
+        # cave on its own.
         body = section.body
-        if section.size_of_raw_data > section.virtual_size:
-            body += "\x00" * (section.size_of_raw_data - section.virtual_size)
         search_cave(section.name, body, cavesize, section_offset, vaddr, infos, _bytes)
 
 
 def search_macho(filename, cavesize, _bytes):
     g = MachO.from_file(filename)
+    data = open(filename, "rb").read()
 
     for command in g.load_commands:
         if command.type == MachO.LoadCommandType.segment_64:
+            infos = "init: [{}], max: [{}]".format(
+                parse_macho_flags(command.body.initprot),
+                parse_macho_flags(command.body.maxprot),
+            )
             for section in command.body.sections:
-                if isinstance(section.data, str):
-                    infos = "init: [{}], max: [{}]".format(
-                        parse_macho_flags(command.body.initprot),
-                        parse_macho_flags(command.body.maxprot),
-                    )
-                    search_cave(
-                        "{}.{}".format(section.seg_name, section.sect_name),
-                        section.data,
-                        cavesize,
-                        section.offset,
-                        section.addr,
-                        infos,
-                        _bytes,
-                    )
+                # zerofill sections (e.g. __bss) hold no bytes in the file
+                if section.offset == 0 or section.size == 0:
+                    continue
+
+                body = data[section.offset : section.offset + section.size]
+                search_cave(
+                    "{}.{}".format(section.seg_name, section.sect_name),
+                    body,
+                    cavesize,
+                    section.offset,
+                    section.addr,
+                    infos,
+                    _bytes,
+                )
 
 
 def search_elf(filename, cavesize, _bytes):
     g = Elf.from_file(filename)
+    data = open(filename, "rb").read()
 
     for section in g.header.section_headers:
-        infos = parse_sh_flags(section.flags)
+        # nobits sections (e.g. .bss) occupy no space in the file
+        if section.type == Elf.ShType.nobits:
+            continue
 
-        print(section.body)
-        print(dir(section.body))
+        infos = parse_sh_flags(section.flags)
+        body = data[section.ofs_body : section.ofs_body + section.len_body]
+
         search_cave(
             section.name,
-            section.body,
+            body,
             cavesize,
             section.ofs_body,
             section.addr,
@@ -207,7 +215,7 @@ def search(filename, cavesize, bytes_arg):
     )
     print()
 
-    _bytes = map(lambda e: chr(int(e, 16)), bytes_arg)
+    _bytes = [int(e, 16) for e in bytes_arg]
 
     detect_type(filename, parse_int(cavesize), _bytes)
 
