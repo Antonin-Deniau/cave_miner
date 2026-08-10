@@ -1,0 +1,291 @@
+name: Parser Tests
+
+on:
+  push:
+    branches: [ main, master, claude/** ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-mingw-w64-x86-64
+
+    - name: Install Python dependencies
+      run: |
+        pip install --upgrade pip
+        pip install lief docopt-ng
+
+    - name: Create test PE binary
+      run: |
+        cat > /tmp/test_pe.c << 'EOF'
+        #include <stdio.h>
+        int main() {
+            printf("Hello from PE test binary\n");
+            return 0;
+        }
+        EOF
+        x86_64-w64-mingw32-gcc /tmp/test_pe.c -o /tmp/test.exe
+        file /tmp/test.exe
+
+    - name: Create Mach-O test binary
+      run: |
+        python3 << 'EOF'
+        import struct
+
+        # Create Mach-O binary with sections
+        MH_MAGIC_64 = 0xFEEDFACF
+        CPU_TYPE_X86_64 = 0x01000007
+        CPU_SUBTYPE_X86_64_ALL = 0x00000003
+        MH_EXECUTE = 0x00000002
+        LC_SEGMENT_64 = 0x19
+        SECTION_64_SIZE = 80
+
+        data = bytearray()
+
+        # Mach-O header
+        data += struct.pack('<I', MH_MAGIC_64)
+        data += struct.pack('<I', CPU_TYPE_X86_64)
+        data += struct.pack('<I', CPU_SUBTYPE_X86_64_ALL)
+        data += struct.pack('<I', MH_EXECUTE)
+        data += struct.pack('<I', 1)
+        data += struct.pack('<I', 72 + (2 * SECTION_64_SIZE))
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+
+        # LC_SEGMENT_64 command
+        data += struct.pack('<I', LC_SEGMENT_64)
+        data += struct.pack('<I', 72 + (2 * SECTION_64_SIZE))
+        data += b'__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        data += struct.pack('<Q', 0x100000000)
+        data += struct.pack('<Q', 0x1000)
+        data += struct.pack('<Q', 0)
+        data += struct.pack('<Q', 0x1000)
+        data += struct.pack('<I', 7)
+        data += struct.pack('<I', 5)
+        data += struct.pack('<I', 2)  # 2 sections
+        data += struct.pack('<I', 0)
+
+        # Section 1: __text
+        data += b'__text\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        data += b'__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        data += struct.pack('<Q', 0x100000000)
+        data += struct.pack('<Q', 0x100)
+        data += struct.pack('<I', 0x100)
+        data += struct.pack('<I', 4)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0x80000400)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+
+        # Section 2: __const
+        data += b'__const\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        data += b'__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        data += struct.pack('<Q', 0x100000100)
+        data += struct.pack('<Q', 0x50)
+        data += struct.pack('<I', 0x200)
+        data += struct.pack('<I', 3)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+        data += struct.pack('<I', 0)
+
+        # Pad and add section data
+        current_size = len(data)
+        data += b'\x00' * (0x100 - current_size)
+        # __text section: some code then padding
+        data += b'\x90' * 0x50  # Some NOP instructions
+        data += b'\x00' * 0xB0  # Large null byte area (176 bytes)
+        # __const section: some data then padding
+        data += b'Mach-O test data\x00'
+        data += b'\x00' * 0x40  # Large null byte area (64 bytes)
+        data += b'\x00' * (0x1000 - len(data))
+
+        with open('/tmp/test_macho', 'wb') as f:
+            f.write(data)
+
+        print(f"Created Mach-O test binary with 2 sections: {len(data)} bytes")
+        EOF
+        file /tmp/test_macho
+
+    - name: Test parser imports
+      run: |
+        python3 -c "from cave_miner.formats import Elf, Pe, MachO; print('✅ All parsers imported successfully')"
+
+    - name: Test ELF parser
+      run: |
+        python3 << 'EOF'
+        from cave_miner.formats import Elf
+
+        print("Testing ELF Parser...")
+        elf = Elf.from_file('/bin/ls')
+
+        assert elf.header.section_headers is not None
+        assert len(elf.header.section_headers) > 0
+
+        print(f"✅ ELF Parser: Found {len(elf.header.section_headers)} sections")
+        EOF
+
+    - name: Test PE parser
+      run: |
+        python3 << 'EOF'
+        from cave_miner.formats import Pe
+
+        print("Testing PE Parser...")
+        pe = Pe.from_file('/tmp/test.exe')
+
+        assert pe.sections is not None
+        assert len(pe.sections) > 0
+        assert pe.optional_hdr is not None
+
+        print(f"✅ PE Parser: Found {len(pe.sections)} sections")
+        print(f"✅ PE Format: {'PE32' if pe.optional_hdr.std.format == Pe.PeFormat.pe32 else 'PE32+'}")
+        EOF
+
+    - name: Test Mach-O parser
+      run: |
+        python3 << 'EOF'
+        from cave_miner.formats import MachO
+
+        print("Testing Mach-O Parser...")
+        macho = MachO.from_file('/tmp/test_macho')
+
+        assert macho.load_commands is not None
+        assert len(macho.load_commands) > 0
+
+        print(f"✅ Mach-O Parser: Found {len(macho.load_commands)} load commands")
+        EOF
+
+    - name: Test ELF cave search
+      run: |
+        echo "Testing ELF cave search on /bin/ls..."
+        python3 -m cave_miner search --size=64 --bytes=0x00 /bin/ls > /tmp/elf_output.txt
+
+        # Validate output
+        if grep -q "Starting cave mining process" /tmp/elf_output.txt && \
+           grep -q "Mining finished" /tmp/elf_output.txt; then
+          echo "✅ ELF cave search: Process completed successfully"
+
+          if grep -q "New cave detected" /tmp/elf_output.txt; then
+            CAVE_COUNT=$(grep -c "New cave detected" /tmp/elf_output.txt)
+            echo "✅ Found $CAVE_COUNT code cave(s)"
+
+            # Validate cave details are present
+            if grep -q "section_name:" /tmp/elf_output.txt && \
+               grep -q "cave_begin:" /tmp/elf_output.txt && \
+               grep -q "cave_size:" /tmp/elf_output.txt && \
+               grep -q "vaddress:" /tmp/elf_output.txt; then
+              echo "✅ Cave details validated (section, address, size)"
+            else
+              echo "❌ Missing cave detail fields"
+              exit 1
+            fi
+          else
+            echo "⚠️  No caves found (acceptable for this binary)"
+          fi
+        else
+          echo "❌ ELF cave search failed to complete"
+          cat /tmp/elf_output.txt
+          exit 1
+        fi
+
+    - name: Test PE cave search
+      run: |
+        echo "Testing PE cave search on /tmp/test.exe..."
+        python3 -m cave_miner search --size=64 --bytes=0x00 /tmp/test.exe > /tmp/pe_output.txt
+
+        # Validate output
+        if grep -q "Starting cave mining process" /tmp/pe_output.txt && \
+           grep -q "Mining finished" /tmp/pe_output.txt; then
+          echo "✅ PE cave search: Process completed successfully"
+
+          if grep -q "New cave detected" /tmp/pe_output.txt; then
+            CAVE_COUNT=$(grep -c "New cave detected" /tmp/pe_output.txt)
+            echo "✅ Found $CAVE_COUNT code cave(s)"
+
+            # Validate cave details are present
+            if grep -q "section_name:" /tmp/pe_output.txt && \
+               grep -q "cave_begin:" /tmp/pe_output.txt && \
+               grep -q "cave_size:" /tmp/pe_output.txt && \
+               grep -q "vaddress:" /tmp/pe_output.txt; then
+              echo "✅ Cave details validated (section, address, size)"
+            else
+              echo "❌ Missing cave detail fields"
+              exit 1
+            fi
+          else
+            echo "⚠️  No caves found (acceptable for this binary)"
+          fi
+        else
+          echo "❌ PE cave search failed to complete"
+          cat /tmp/pe_output.txt
+          exit 1
+        fi
+
+    - name: Test Mach-O cave search
+      run: |
+        echo "Testing Mach-O cave search on /tmp/test_macho..."
+        python3 -m cave_miner search --size=32 --bytes=0x00 /tmp/test_macho > /tmp/macho_output.txt
+
+        # Validate output
+        if grep -q "Starting cave mining process" /tmp/macho_output.txt && \
+           grep -q "Mining finished" /tmp/macho_output.txt; then
+          echo "✅ Mach-O cave search: Process completed successfully"
+
+          if grep -q "New cave detected" /tmp/macho_output.txt; then
+            CAVE_COUNT=$(grep -c "New cave detected" /tmp/macho_output.txt)
+            echo "✅ Found $CAVE_COUNT code cave(s)"
+
+            # Validate cave details are present
+            if grep -q "section_name:" /tmp/macho_output.txt && \
+               grep -q "cave_begin:" /tmp/macho_output.txt && \
+               grep -q "cave_size:" /tmp/macho_output.txt && \
+               grep -q "vaddress:" /tmp/macho_output.txt; then
+              echo "✅ Cave details validated (section, address, size)"
+            else
+              echo "❌ Missing cave detail fields"
+              exit 1
+            fi
+          else
+            echo "⚠️  No caves found (acceptable for this binary)"
+          fi
+        else
+          echo "❌ Mach-O cave search failed to complete"
+          cat /tmp/macho_output.txt
+          exit 1
+        fi
+
+    - name: Test help command
+      run: |
+        python3 -m cave_miner --help
+        echo "✅ Help command works"
+
+    - name: Run comprehensive test suite
+      run: |
+        python3 test_parsers.py
+
+    - name: Test Summary
+      if: always()
+      run: |
+        echo "=========================================="
+        echo "           TEST SUMMARY"
+        echo "=========================================="
+        echo "All parser tests completed!"
+        echo "Check individual step outputs above for details."
