@@ -30,16 +30,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry
 
-    - name: Install kaitsai struct compiler
-      run: |
-        apt update
-        apt install -y openjdk-8-jre-headless
-        curl -LO https://github.com/kaitai-io/kaitai_struct_compiler/releases/download/0.10/kaitai-struct-compiler_0.10_all.deb
-        dpkg -i ./kaitai-struct-compiler_0.10_all.deb
-
     - name: Build package
       run: |
-        bash ./build-formats.sh
         poetry install
         poetry build
 
