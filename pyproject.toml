@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 docopt = "^0.6.2"
-lief = "^0.15.0"
+lief = "^0.17.2"
 
 [tool.poetry.scripts]
 cave_miner = "cave_miner.__main__:main"
